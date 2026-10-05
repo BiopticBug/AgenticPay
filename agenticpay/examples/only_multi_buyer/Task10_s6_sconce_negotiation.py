@@ -21,15 +21,15 @@ sys.path.insert(0, project_root)
 from agenticpay.envs.only_multi_buyer.Task3_sequential_two_buyer_negotiation import Task3SequentialTwoBuyerNegotiation
 from agenticpay.agents.buyer_agent import BuyerAgent
 from agenticpay.agents.seller_agent import SellerAgent
-from agenticpay.models.openai_vlm import OpenAIVLM
-from agenticpay.examples.config import reward_weights, max_rounds, price_tolerance, OPENAI_API_KEY
+from agenticpay.models.qwen3_vl import Qwen3VL
+from agenticpay.examples.config import reward_weights, max_rounds, price_tolerance
 
 
 def get_model_name(model):
     """Extract model name from model object
     
     Args:
-        model: Model object (CustomLLM, VLLMLLM, etc.)
+        model: Model object (Qwen3VL.)
     
     Returns:
         str: Model name
@@ -45,7 +45,7 @@ def get_model_name(model):
     else:
         # Fallback to string representation, but try to extract model name
         model_str = str(model)
-        # Try to extract model name from string like "CustomLLM(model=qwen3-8b)"
+        # Try to extract model name from string like "Qwen3VL(model=qwen3-8b)"
         if "model=" in model_str:
             try:
                 return model_str.split("model=")[1].split(")")[0]
@@ -108,23 +108,20 @@ def main(model_name=None):
     
     print("Initializing model...")
     
-    # Check API key
-    api_key = os.getenv("OPENAI_API_KEY") or OPENAI_API_KEY
-    if not api_key:
-        print("Warning: OPENAI_API_KEY not set. Please set it to use OpenAI models.")
-        print("You can set it with: export OPENAI_API_KEY='your-key-here'")
-        return
-    
-    # Use OpenAIVLM (Vision Language Model) for multi-buyer negotiation with product images (image + text)
-    # Supports OpenAI API or OpenAI-compatible API (set OPENAI_URL for local OpenVLM etc.)
-    model_name = model_name or "gpt-4o-mini"  # gpt-4o, gpt-4o-mini, gpt-4-vision-preview, etc.
-    base_url = os.getenv("OPENAI_URL") or os.getenv("OPENVLM_BASE_URL")  # None = official OpenAI API
-    model = OpenAIVLM(
-        model=model_name,
-        api_key=api_key,
-        base_url=base_url,
+    model_path = os.path.join(
+        project_root,
+        "agenticpay",
+        "models",
+        "download_models",
+        "Qwen3-VL-2B-Instruct",
     )
-    
+
+    model = Qwen3VL(
+        model_path=model_path,
+        device_map="auto",
+        dtype="auto",
+    )
+
     print(f"✓ Successfully initialized: {model}")
     
     print("Creating agents...")
@@ -736,7 +733,7 @@ if __name__ == "__main__":
         "--model",
         type=str,
         default=None,
-        help="Model name to use (e.g., gpt-4o-mini, gpt-4o). Set OPENAI_URL for OpenAI-compatible API (e.g., local OpenVLM)."
+        help="Retained for CLI compatibility; the local Qwen3-VL path is always used.",
     )
     args = parser.parse_args()
     main(model_name=args.model)

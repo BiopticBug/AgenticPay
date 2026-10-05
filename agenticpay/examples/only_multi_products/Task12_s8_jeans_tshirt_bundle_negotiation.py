@@ -20,23 +20,19 @@ sys.path.insert(0, project_root)
 from agenticpay import make  # Use registration system
 from agenticpay.agents.buyer_agent import BuyerAgent
 from agenticpay.agents.seller_agent import SellerAgent
-from agenticpay.models.custom_llm import CustomLLM
-from agenticpay.models.openai_vlm import OpenAIVLM
 from agenticpay.models.qwen3_vl import Qwen3VL
-from agenticpay.models.vllm_lm import VLLMLLM
-from agenticpay.models.sglang_vlm import SGLangVLM
 
 # Import configuration parameters
 examples_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, examples_dir)
-from config import reward_weights, buyer_reward_aggregation, seller_reward_aggregation, max_rounds, price_tolerance, OPENAI_API_KEY
+from config import reward_weights, buyer_reward_aggregation, seller_reward_aggregation, max_rounds, price_tolerance
 
 
 def get_model_name(model):
     """Extract model name from model object
     
     Args:
-        model: Model object (CustomLLM, VLLMLLM, etc.)
+        model: Model object (Qwen3VL.)
     
     Returns:
         str: Model name
@@ -52,7 +48,7 @@ def get_model_name(model):
     else:
         # Fallback to string representation, but try to extract model name
         model_str = str(model)
-        # Try to extract model name from string like "CustomLLM(model=qwen3-8b)"
+        # Try to extract model name from string like "Qwen3VL(model=qwen3-8b)"
         if "model=" in model_str:
             try:
                 return model_str.split("model=")[1].split(")")[0]
@@ -71,15 +67,19 @@ def main(model_name=None):
     
     print("Initializing model...")
     
-    # OpenVLM via OpenAI-compatible API (product images passed to VLM)
-    api_key = os.getenv("OPENAI_API_KEY") or OPENAI_API_KEY
-    openvlm_base_url = os.getenv("OPENAI_URL") or os.getenv("OPENVLM_BASE_URL", "http://localhost:8000/v1")
-    openvlm_model = os.getenv("OPENVLM_MODEL", "openvlm")
-    
-    model = OpenAIVLM(
-        model=model_name or openvlm_model,
-        api_key=api_key,
-        base_url=openvlm_base_url,
+    # Local Qwen3-VL model
+    model_path = os.path.join(
+        project_root,
+        "agenticpay",
+        "models",
+        "download_models",
+        "Qwen3-VL-2B-Instruct",
+    )
+
+    model = Qwen3VL(
+        model_path=model_path,
+        device_map="auto",
+        dtype="auto",
     )
 
     print(f"✓ Successfully initialized: {model}")
@@ -488,7 +488,7 @@ if __name__ == "__main__":
         "--model",
         type=str,
         default=None,
-        help="Model name. Set OPENAI_URL/OPENVLM_BASE_URL for API endpoint, OPENVLM_MODEL for default model name."
+        help="Retained for CLI compatibility; the local Qwen3-VL path is always used."
     )
     args = parser.parse_args()
     main(model_name=args.model)

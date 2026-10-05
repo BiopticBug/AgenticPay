@@ -22,11 +22,5 @@ seller_reward_aggregation = "average"  # Seller reward aggregation method
 max_rounds = 20  # Maximum negotiation rounds
 price_tolerance = 0.0  # Price tolerance (used to determine if prices match)
 
-# Model configuration
-# model_mode: "local" (local deployment) or "cloud" (cloud API)
-model_mode = "local"
-# model_path: For local mode, use local model path; for cloud mode, use online model name (e.g. "gpt-4", "qwen-turbo")
-model_path = "/path/to/local/model"
-
-OPENAI_API_KEY = "your-api-key-here"
-OPENAI_URL = "your-url-here"
+# Local model configuration
+MODEL_PATH = "agenticpay/models/download_models/Qwen3-VL-2B-Instruct"

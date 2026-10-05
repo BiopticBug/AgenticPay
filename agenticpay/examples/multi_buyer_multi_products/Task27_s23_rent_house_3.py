@@ -21,8 +21,8 @@ sys.path.insert(0, project_root)
 from agenticpay.envs.multi_buyer_multi_products.Task3_sequential_two_buyer_two_product_negotiation import Task3SequentialTwoBuyerTwoProductNegotiation
 from agenticpay.agents.buyer_agent import BuyerAgent
 from agenticpay.agents.seller_agent import SellerAgent
-from agenticpay.models.openai_vlm import OpenAIVLM
-from agenticpay.examples.config import reward_weights, max_rounds, price_tolerance, OPENAI_API_KEY
+from agenticpay.models.qwen3_vl import Qwen3VL
+from agenticpay.examples.config import reward_weights, max_rounds, price_tolerance
 
 
 def get_model_name(model):
@@ -90,14 +90,19 @@ def _run_seller_routing(
 def main(model_name=None):
     print("Initializing model...")
 
-    api_key = os.getenv("OPENAI_API_KEY") or OPENAI_API_KEY
-    if not api_key:
-        print("Warning: OPENAI_API_KEY not set. Please set it to use OpenAI models.")
-        print("You can set it with: export OPENAI_API_KEY='your-key-here'")
-        return
+    model_path = os.path.join(
+        project_root,
+        "agenticpay",
+        "models",
+        "download_models",
+        "Qwen3-VL-2B-Instruct",
+    )
 
-    model_name = model_name or "gpt-5.4"
-    model = OpenAIVLM(model=model_name, api_key=api_key)
+    model = Qwen3VL(
+        model_path=model_path,
+        device_map="auto",
+        dtype="auto",
+    )
 
     print(f"✓ Successfully initialized: {model}")
 

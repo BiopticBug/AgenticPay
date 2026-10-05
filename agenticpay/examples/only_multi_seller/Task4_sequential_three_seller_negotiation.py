@@ -19,11 +19,7 @@ sys.path.insert(0, project_root)
 from agenticpay.envs.only_multi_seller.Task4_sequential_three_seller_negotiation import Task4SequentialThreeSellerNegotiation
 from agenticpay.agents.buyer_agent import BuyerAgent
 from agenticpay.agents.seller_agent import SellerAgent
-from agenticpay.models.custom_llm import CustomLLM
-from agenticpay.models.openai_vlm import OpenAIVLM
 from agenticpay.models.qwen3_vl import Qwen3VL
-from agenticpay.models.vllm_lm import VLLMLLM
-from agenticpay.models.sglang_vlm import SGLangVLM
 from agenticpay.examples.config import reward_weights, max_rounds, price_tolerance
 import re
 
@@ -32,7 +28,7 @@ def get_model_name(model):
     """Extract model name from model object
     
     Args:
-        model: Model object (CustomLLM, VLLMLLM, etc.)
+        model: Model object (Qwen3VL.)
     
     Returns:
         str: Model name
@@ -48,7 +44,7 @@ def get_model_name(model):
     else:
         # Fallback to string representation, but try to extract model name
         model_str = str(model)
-        # Try to extract model name from string like "CustomLLM(model=qwen3-8b)"
+        # Try to extract model name from string like "Qwen3VL(model=qwen3-8b)"
         if "model=" in model_str:
             try:
                 return model_str.split("model=")[1].split(")")[0]
@@ -127,40 +123,19 @@ def main(model_name=None):
     
     print("Initializing model...")
     
-    # Check API key
-    api_key = os.getenv("OPENAI_API_KEY")
-    if not api_key:
-        print("Warning: OPENAI_API_KEY not set. Please set it to use OpenAI models.")
-        print("You can set it with: export OPENAI_API_KEY='your-key-here'")
-        return
-    
-    # Use provided model name or default
-    # if model_name is None:
-    #     model_name = "qwen3-14b"  # Default model
-    
-    # model = CustomLLM(api_key=api_key, model=model_name) # claude-sonnet-4-5-20250929, gpt-5.2, gemini-3-pro-all, gpt-3.5-turbo, DeepSeek-R1
+    model_path = os.path.join(
+        project_root,
+        "agenticpay",
+        "models",
+        "download_models",
+        "Qwen3-VL-2B-Instruct",
+    )
 
-        # Use OpenAIVLM (Vision Language Model) - same pattern as Task1_basic_price_negotiation_api
-    model_name = model_name or "gpt-4o-mini"  # gpt-4o, gpt-4o-mini, gpt-4-vision-preview, etc.
-    model = OpenAIVLM(model=model_name, api_key=api_key)
-
-
-    # Build absolute path to model directory
-    # model_path = os.path.join(project_root, "models", "download_models", "Qwen3-8B-Instruct")
-    # model_path = os.path.abspath(model_path)
-
-    # vLLM LLM Model
-    # model = VLLMLLM(
-    #     model_path=model_path,
-    #     trust_remote_code=True,
-    #     gpu_memory_utilization=0.9,
-    #     tensor_parallel_size=4, # 4 GPUs
-    # )
-
-    # SGLang VLM Model
-    # model = SGLangVLM(
-    #     model_path=model_path,
-    # )
+    model = Qwen3VL(
+        model_path=model_path,
+        device_map="auto",
+        dtype="auto",
+    )
 
     print(f"✓ Successfully initialized: {model}")
     
@@ -617,7 +592,7 @@ if __name__ == "__main__":
         "--model",
         type=str,
         default=None,
-        help="Model name to use (e.g., 'gemini-3-pro-all', 'gpt-5.2', 'claude-sonnet-4-5-20250929'). If not provided, uses default model."
+        help="Retained for CLI compatibility; the local Qwen3-VL path is always used."
     )
     args = parser.parse_args()
     main(model_name=args.model)

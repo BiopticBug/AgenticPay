@@ -72,7 +72,7 @@ AgenticPay is a framework and benchmark for evaluating LLM/VLM agents in realist
 
 ## Features
 
-- 🤖 **LLM/VLM-based Agents**: Buyer and Seller agents powered by text and vision-language models (OpenAI-compatible APIs, vLLM, SGLang, Qwen3-VL)
+- 🤖 **Local VLM-based Agents**: Buyer and Seller agents powered by Qwen3-VL
 - 🖼️ **Multimodal Product Grounding**: Tasks can include product images, visual route context, listings, menus, and rich text attributes
 - 📄 **Multi-dimensional Contracts**: Agents negotiate complete JSON contracts with price, continuous terms, and discrete terms instead of a single scalar price
 - 💬 **Multi-turn Conversations**: Support for extended natural-language negotiation dialogues with structured contract proposals
@@ -87,7 +87,7 @@ AgenticPay is a framework and benchmark for evaluating LLM/VLM agents in realist
 
 ```bash
 # Create conda environment
-conda create -n agenticpay python=3.10 -y
+conda create -n agenticpay python=3.11 -y
 conda activate agenticpay
 
 # Navigate to project directory
@@ -100,20 +100,19 @@ pip install -r requirements.txt
 pip install -e .
 ```
 
-**Model Download**: Download models from Hugging Face and save them to the `agenticpay/models/download_models` directory for local model usage.
+**Model Download**: Download Qwen3-VL-2B-Instruct from Hugging Face and save it to `agenticpay/models/download_models/Qwen3-VL-2B-Instruct`:
+
+```powershell
+hf download Qwen/Qwen3-VL-2B-Instruct `
+  --local-dir agenticpay\models\download_models\Qwen3-VL-2B-Instruct
+```
 
 ## Quick Start
 
 ### Before Running Examples
 
-1. **Configure the project**: Copy `agenticpay/examples/config_example.py` to `agenticpay/examples/config.py` and set API keys, local model paths, and common environment parameters.
-2. **Choose a model backend**: The current examples use OpenAI-compatible text/VLM APIs, local VLM backends, and legacy local LLM backends depending on the task:
-   - `OpenAIVLM` / `OpenAILLM` — cloud or OpenAI-compatible APIs
-   - `Qwen3VL`, `SGLangVLM`, `VLLMLLM` — local multimodal/text inference
-3. **Legacy Task1 model invocation examples**: For the basic price negotiation task, the repo still provides three example files demonstrating different ways to call LLMs:
-   - `Task1_basic_price_negotiation_api_example.py` — OpenAI/compatible API
-   - `Task1_basic_price_negotiation_sglang_example.py` — SGLang for local inference
-   - `Task1_basic_price_negotiation_vllm_example.py` — vLLM for local inference (multi-GPU)
+1. **Configure the project**: Copy `agenticpay/examples/config_example.py` to `agenticpay/examples/config.py` if needed. Examples use the local Qwen3-VL path by default and require no API key.
+2. **Use the local model**: Every runnable example initializes `Qwen3VL` from `agenticpay/models/download_models/Qwen3-VL-2B-Instruct` with automatic device mapping and dtype selection.
 
 ### Running the Example Script
 
@@ -148,22 +147,23 @@ from agenticpay.agents.seller_agent import SellerAgent
 import os
 
 
-# Local models (SGLang, vLLM, etc.)
-from agenticpay.models.sglang_vlm import SGLangVLM
-from agenticpay.models.vllm_lm import VLLMLLM
+# Local Qwen3-VL model
+project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+model_path = os.path.join(
+  project_root,
+  "agenticpay",
+  "models",
+  "download_models",
+  "Qwen3-VL-2B-Instruct",
+)
 
-model_path = "agenticpay/models/download_models/Qwen3-VL-8B-Instruct"
+from agenticpay.models.qwen3_vl import Qwen3VL
 
-# Option 1: SGLang VLM
-model = SGLangVLM(model_path=model_path)
-
-# Option 2: vLLM LM (for multi-GPU setups)
-# model = VLLMLLM(
-#     model_path=model_path,
-#     trust_remote_code=True,
-#     gpu_memory_utilization=0.9,
-#     tensor_parallel_size=4,  # Number of GPUs
-# )
+model = Qwen3VL(
+  model_path=model_path,
+  device_map="auto",
+  dtype="auto",
+)
 
 # Create agents with bottom prices (confidential)
 buyer_max_price = 120.0  # Maximum acceptable price for buyer
@@ -264,7 +264,7 @@ AgenticPay/
 │   │   ├── only_multi_seller/     # Multi-seller scenarios
 │   │   ├── only_multi_buyer/      # Multi-buyer scenarios
 │   │   └── multi_*/               # Complex multi-agent scenarios
-│   ├── models/                    # LLM/VLM implementations (OpenAI API, vLLM, SGLang, Qwen3-VL)
+│   ├── models/                    # Local Qwen3-VL implementation
 │   ├── memory/                    # Conversation history management
 │   ├── results/                   # Evaluation outputs and paper-related materials
 │   ├── utils/                     # Utilities (state, user profile)
@@ -294,7 +294,7 @@ Concrete file names vary slightly per category (e.g. bundle vs. single product, 
 
 Basic negotiation scenarios with one buyer, one product, and one seller.
 
-- **Task1–Task3** — Legacy price-only negotiation demos (basic / close-price / close-to-market-price). `Task1` additionally provides API, vLLM, and SGLang variants for different inference backends.
+- **Task1–Task3** — Legacy price-only negotiation demos (basic / close-price / close-to-market-price), all using local Qwen3-VL.
 - **Task4–Task28** — The full `s1`–`s25` scenario suite (consumer products, taxi, food delivery, rent house) instantiated as single-buyer / single-product / single-seller multidimensional negotiations.
 
 #### Only Multi-Products (`only_multi_products/`)
@@ -447,11 +447,9 @@ Current benchmark tasks use `contract_config` to define:
 
 ### LLM Configuration
 
-Supports multiple providers:
-- **Vision-Language Models**: `OpenAIVLM`, `Qwen3VL`, `SGLangVLM` - for image-grounded negotiation tasks
-- **Local Text Models**: `VLLMLLM` - for local text model inference (supports multi-GPU setups)
-- **OpenAI** (API): `OpenAILLM` - requires API key
-- **Custom/OpenAI-compatible APIs**: `CustomLLM` - for compatible hosted endpoints
+The runnable examples use one local provider:
+- **Vision-Language Model**: `Qwen3VL` loaded from `agenticpay/models/download_models/Qwen3-VL-2B-Instruct`
+- No API key or cloud endpoint setup is required.
 
 ## Examples
 
@@ -460,9 +458,7 @@ Supports multiple providers:
 Examples are organized by market topology. Each topology directory contains `Task*.py` scenario scripts plus a `run_all_tasks.sh` helper; the root `run_all_examples.sh` runs all available groups.
 
 1. **Single Buyer + Product + Seller** (`examples/single_buyer_product_seller/`)
-   - `Task1_basic_price_negotiation_api_example.py` - Basic price negotiation via API (OpenAI/compatible)
-   - `Task1_basic_price_negotiation_sglang_example.py` - Basic price negotiation via SGLang
-   - `Task1_basic_price_negotiation_vllm_example.py` - Basic price negotiation via vLLM
+  - `Task1_basic_price_negotiation_api_example.py` - Basic price negotiation using local Qwen3-VL
    - `Task2_close_price_negotiation.py` - Close price negotiation
    - `Task3_close_to_market_price_negotiation.py` - Market price negotiation
    - `Task4_s1_beauty_product_negotiation.py` and later scenario scripts - multimodal contract-mode benchmark tasks
